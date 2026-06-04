@@ -102,6 +102,20 @@ bucket_mgr = BucketManager(config, embedding_engine=embedding_engine)  # Bucket 
 dehydrator = Dehydrator(config)                      # Dehydrator / 脱水器
 decay_engine = DecayEngine(config, bucket_mgr)       # Decay engine / 衰减引擎
 import_engine = ImportEngine(config, bucket_mgr, dehydrator, embedding_engine)  # Import engine / 导入引擎
+# === TEMP: 启动时自动回填 embedding（修完删除） ===
+import subprocess
+try:
+    logger.info("Starting backfill_embeddings on boot...")
+    result = subprocess.run(
+        ["python3", "backfill_embeddings.py", "--batch-size", "10"],
+        capture_output=True, text=True, timeout=900
+    )
+    logger.info(f"Backfill done: {result.stdout[-500:]}")
+    if result.returncode != 0:
+        logger.warning(f"Backfill stderr: {result.stderr[-500:]}")
+except Exception as e:
+    logger.warning(f"Backfill skipped: {e}")
+# === END TEMP ===
 
 # --- Create MCP server instance / 创建 MCP 服务器实例 ---
 # host="0.0.0.0" so Docker container's SSE is externally reachable
